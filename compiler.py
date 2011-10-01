@@ -22,7 +22,15 @@ def optimiseRepeat(rep, command):
 
 class Register:
     index = None
+
+    def __init__(self):
+        if not hasattr(Register, 'registers'):
+            Register.registers = []
+        Register.registers.append(self)
+
     def _finalIndex(self):
+        if index is None:
+            raise 'Indexes have not been resolved'
         return index
 
 #maps user defined registers to actual brainfuck registers
@@ -36,13 +44,20 @@ class TempRegister(Register):
 
 class Value:
     value = None
-    def __init__(self, value):
+    register = None
+    def __init__(self, register, value):
+        assert isinstance(register, Register)
+        self.register = register
         self.value = value
 
     #returns brainfuck string that creates this value
     def _fuckUp(self, curPointer):
         #return optimiseRepeat(self.value, '+')
-        return self.value * '+'
+        result = ''
+        if self.register is not None:
+            result += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
+        result += self.value * '+'
+        return result
 
 
 #move from index to another index
@@ -81,7 +96,7 @@ class Move:
             last = register._finalIndex()
 
         #move from last to beginning
-        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(self.toRegisters[-1]._toFinalIndex())
+        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(self.toRegisters[-1]._finalIndex())
         return result
 
 class Copy:
