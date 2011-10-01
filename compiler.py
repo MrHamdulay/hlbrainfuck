@@ -12,6 +12,7 @@ def findBestBase(rep):
             bestBase = i
     return bestBase
 
+#bleh this doesn't work, need to use temporary registers and still need to figure that out
 def optimiseRepeat(rep, command):
     bestBase = findBestBase(rep)
     d = command
@@ -20,23 +21,18 @@ def optimiseRepeat(rep, command):
     return '%s[%s]%s' % (d * (rep/bestBase), d * bestBase, d*(rep%i))
 
 class Register:
-    pass
+    index = None
+    def _finalIndex(self):
+        return index
 
 #maps user defined registers to actual brainfuck registers
 #user defined registers can have index [0...800ish]
 class UserRegister(Register):
-    mappedOnto = None
-
-    #set the index value of the internal register this register is mapped onto
-    def _map(self, index):
-        self.mappedOnto = index1000ish
+    pass
 
 #temporary register used internally for calculations
 class TempRegister(Register):
-    index = 0
-    def __init__(self, index):
-        self.index = index
-
+    pass
 
 class Value:
     value = None
@@ -44,28 +40,65 @@ class Value:
         self.value = value
 
     #returns brainfuck string that creates this value
-    def _fuckUp(self):
-        return optimiseRepeat(self.value, '+')
+    def _fuckUp(self, curPointer):
+        #return optimiseRepeat(self.value, '+')
+        return self.value * '+'
 
 
 #move from index to another index
+class MovePointer:
+    pos = None
+    def __init__(self, pos):
+        self.offset = abs(pos)
+
+    def _fuckUp(self, curPointer):
+        delta = abs(curPointer - self.pos)
+        d = '<' if (curPointer - self.pos) < 0 else '>'
+        #return optimiseRepeat(delta)
+        return d * delta
+
+#[move to dest, increment, move back, decrement]
+#from from one register to many registers
 class Move:
+    fromRegister = None
+    toRegister = None
+
+    def __init__(self, fromRegister, toRegisters):
+        assert isinstance(fromRegister, Register)
+        for register in toRegisters:
+            assert isinstance(register, Register)
+
+        self.fromRegister = fromRegister
+        self.toRegisters = toRegisters
+
+    def _fuckUp(self, curPointer):
+        #move to from register position
+        last = self.fromRegister._finalIndex()
+        result = '%s[' % MovePointer(last)._fuckUp(curPointer)
+        for register in self.toRegisters:
+            #move to dest, incremement
+            result += '%s+' % MovePointer(register._finalIndex()).fuckUp(last)
+            last = register._finalIndex()
+
+        #move from last to beginning
+        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(self.toRegisters[-1]._toFinalIndex())
+        return result
+
+class Copy:
     offset = None
     left = False
-    def __init__(self, left, offset):
-        self.offset = offset
-        self.left = left
+
+    def __init__(self, fromRegister, toRegister):
+        assert isinstance(fromRegister, Register) and isinstance(toRegister, Register)
+        self.fromRegister = fromRegister
+        self.toRegister = toRegister
 
     def _fuckUp(self):
-        d = '<' if self.left else '>'
-        return optimiseRepeat(self.offset)
+        temp = TempRegister()
+        result = Move(
+        pass
 
-
-
-class Command:
-    pass
-
-class Add(Command):
+class Add:
     def __init__(self, x, y):
         pass
 
