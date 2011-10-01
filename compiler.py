@@ -24,6 +24,8 @@ class Register:
     index = None
 
     def __init__(self):
+        #yes, singletons are bad
+        #XXX: get rid of this list and put it into thte compiler object
         if not hasattr(Register, 'registers'):
             Register.registers = []
         Register.registers.append(self)
@@ -41,6 +43,16 @@ class UserRegister(Register):
 #temporary register used internally for calculations
 class TempRegister(Register):
     pass
+
+class Pointer:
+    def __init__(self):
+        self.pos = 0
+
+    def move(self, index):
+        self.pos += index
+
+    def __int__(self):
+        return self.pos
 
 class Value:
     value = None
@@ -75,6 +87,8 @@ class MovePointer:
 #[move to dest, increment, move back, decrement]
 #from from one register to many registers
 class Move:
+    _command = 'move'
+    _ars = 2
     fromRegister = None
     toRegister = None
 
@@ -100,6 +114,8 @@ class Move:
         return result
 
 class Copy:
+    _command = 'copy'
+    _args = 2
     offset = None
     left = False
 
@@ -122,14 +138,20 @@ class Compiler:
 
     def __init__(self, proggy):
         self.proggy = proggy
+        self.pointer = Pointer()
 
-    def add(self, x, y):
-        pass
+    def resolveRegisters(self):
+        if not hasattr(Register, 'registers'):
+            return
+        #for some reason i thought this would be a lot more complicated
+        for i, register in enumerate(Register.registers):
+            register.index = i
 
     #commands are [command, args...]
-    def compileCommand(self, command):
-        if isinstance(command, str):
-            command = command.split(' ')
+    def compile(self, proggy):
+        for line in proggy:
+            l = line.split(' ')
+        pass
 
 if __name__ == '__main__':
     outputfile = sys.stdout
