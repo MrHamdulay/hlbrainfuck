@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import sys
 
 class BrainfuckInterpreter:
-    symbols = '><+-[].,'
     registers = None
     loopStack = None
     pointer = 0
@@ -41,16 +40,20 @@ class BrainfuckInterpreter:
         self.registers[self.pointer] = ord(sys.stdin.read()[0])
 
     def putChar(self):
-        print 'done',chr(self.registers[self.pointer])
+        print 'done',self.registers[self.pointer]
 
+    symbols = '><+-[].,'
     commands = [shiftRight, shiftLeft, increment, decrement, beginLoop, endLoop, getChar, putChar]
 
+    def execChar(self, command):
+        if command in self.symbols:
+            self.commands[self.symbols.find(command)](self)
+
     def run(self, proggy):
-        for char in proggy:
-            c = self.symbols.find(char)
-            if c == -1:
-                continue
-            self.commands[c](self)
+        while self.instructionPos < len(proggy):
+            self.execChar(proggy[self.instructionPos])
+            self.instructionPos += 1
+
 
 if __name__ == '__main__':
     interpreter = BrainfuckInterpreter()
