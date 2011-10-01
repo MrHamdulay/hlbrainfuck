@@ -1,10 +1,26 @@
 #!/usr/bin/env python2
 import sys
 
+#not always the best but good enough
+def findBestBase(rep):
+    bestBase = 1
+    best = rep
+    for i in range(2, 20):
+        length = rep / i + rep % i
+        if length < best:
+            best = length
+            bestBase = i
+    return bestBase
+
+def optimiseRepeat(rep, command):
+    bestBase = findBestBase(rep)
+    d = command
+    if bestBase == 1:
+        return d * rep
+    return '%s[%s]%s' % (d * (rep/bestBase), d * bestBase, d*(rep%i))
+
 class Register:
-    index = 0
-    def __init__(self, index):
-        self.index = index
+    pass
 
 #maps user defined registers to actual brainfuck registers
 #user defined registers can have index [0...800ish]
@@ -17,7 +33,10 @@ class UserRegister(Register):
 
 #temporary register used internally for calculations
 class TempRegister(Register):
-    pass
+    index = 0
+    def __init__(self, index):
+        self.index = index
+
 
 class Value:
     value = None
@@ -26,10 +45,8 @@ class Value:
 
     #returns brainfuck string that creates this value
     def _fuckUp(self):
-        pass
+        return optimiseRepeat(self.value, '+')
 
-class Command:
-    pass
 
 #move from index to another index
 class Move:
@@ -40,15 +57,17 @@ class Move:
         self.left = left
 
     def _fuckUp(self):
-        bestBase = 1
-        best = self.offset
-        for i in range(2, 20):
-            length = self.offset / i + 2 + i + self.offset % i
-            if length < best:
-                best = length
-                bestBase = i
         d = '<' if self.left else '>'
-        return '%s[%s]%s' % (d * (self.offset/bestBase), d * bestBase, d*(self.offset%i))
+        return optimiseRepeat(self.offset)
+
+
+
+class Command:
+    pass
+
+class Add(Command):
+    def __init__(self, x, y):
+        pass
 
 class Compiler:
     proggy = None

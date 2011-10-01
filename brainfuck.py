@@ -12,7 +12,7 @@ class BrainfuckInterpreter:
 
 
     def __init__(self):
-        self.registers = [0] * 1000
+        self.registers = [0] * 50
         self.loopStack = []
 
     def shiftRight(self):
@@ -42,8 +42,11 @@ class BrainfuckInterpreter:
     def putChar(self):
         print 'done',self.registers[self.pointer]
 
-    symbols = '><+-[].,'
-    commands = [shiftRight, shiftLeft, increment, decrement, beginLoop, endLoop, getChar, putChar]
+    def printRegisters(self):
+        print self.registers
+
+    symbols = '><+-[].,?'
+    commands = [shiftRight, shiftLeft, increment, decrement, beginLoop, endLoop, getChar, putChar, printRegisters]
 
     def execChar(self, command):
         if command in self.symbols:
@@ -64,5 +67,7 @@ if __name__ == '__main__':
         print 'python ./brainfuck.py [filename]'
         sys.exit(1)
 
+    proggy = ''
     for line in inp:
-        interpreter.run(line)
+        proggy += line
+    interpreter.run(proggy)
