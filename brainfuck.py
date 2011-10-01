@@ -45,16 +45,21 @@ class BrainfuckInterpreter:
     def printRegisters(self):
         print self.registers
 
-    symbols = '><+-[].,?'
-    commands = [shiftRight, shiftLeft, increment, decrement, beginLoop, endLoop, getChar, putChar, printRegisters]
+    commands = {'>': shiftRight,
+                '<': shiftLeft,
+                '+': increment,
+                '-': decrement,
+                '[': beginLoop,
+                ']': endLoop,
+                '.': getChar,
+                ',': putChar,
+                '?': printRegisters}
 
-    def execChar(self, command):
-        if command in self.symbols:
-            self.commands[self.symbols.find(command)](self)
 
     def run(self, proggy):
         while self.instructionPos < len(proggy):
-            self.execChar(proggy[self.instructionPos])
+            if proggy[self.instructionPos] in self.commands
+                self.commands[proggy[self.instructionPos]](self)
             self.instructionPos += 1
 
 
