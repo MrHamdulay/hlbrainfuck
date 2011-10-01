@@ -74,14 +74,15 @@ class Value:
 
 #move from index to another index
 class MovePointer:
-    pos = None
-    def __init__(self, pos):
-        self.offset = abs(pos)
+    offset = None
+    def __init__(self, offset):
+        self.offset = offset
 
     def _fuckUp(self, curPointer):
-        delta = abs(curPointer - self.pos)
-        d = '<' if (curPointer - self.pos) < 0 else '>'
+        delta = abs(int(curPointer) - self.offset)
+        d = '<' if (int(curPointer) - self.offset) < 0 else '>'
         #return optimiseRepeat(delta)
+        curPointer.move(self.offset)
         return d * delta
 
 #[move to dest, increment, move back, decrement]
@@ -102,15 +103,13 @@ class Move:
 
     def _fuckUp(self, curPointer):
         #move to from register position
-        last = self.fromRegister._finalIndex()
         result = '%s[' % MovePointer(last)._fuckUp(curPointer)
         for register in self.toRegisters:
             #move to dest, incremement
-            result += '%s+' % MovePointer(register._finalIndex()).fuckUp(last)
-            last = register._finalIndex()
+            result += '%s+' % MovePointer(register._finalIndex()).fuckUp(curPointer)
 
         #move from last to beginning
-        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(self.toRegisters[-1]._finalIndex())
+        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         return result
 
 class Copy:
