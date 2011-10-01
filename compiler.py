@@ -94,7 +94,6 @@ class Move:
     toRegister = None
 
     def __init__(self, fromRegister, toRegisters):
-        assert isinstance(fromRegister, Register)
         for register in toRegisters:
             assert isinstance(register, Register)
 
@@ -103,7 +102,13 @@ class Move:
 
     def _fuckUp(self, curPointer):
         #move to from register position
-        result = '%s[' % MovePointer(last)._fuckUp(curPointer)
+        result = ''
+        if isinstance(self.fromRegister, int):
+            val = self.fromRegister
+            self.fromRegister = TempRegister()
+            result += Value(self.fromRegister, val)._fuckUp(curPointer)
+
+        result += '%s[' % MovePointer(last)._fuckUp(curPointer)
         for register in self.toRegisters:
             #move to dest, incremement
             result += '%s+' % MovePointer(register._finalIndex()).fuckUp(curPointer)
@@ -134,6 +139,7 @@ class Add:
 
 class Compiler:
     proggy = None
+    pointer = None
 
     def __init__(self, proggy):
         self.proggy = proggy
@@ -146,11 +152,19 @@ class Compiler:
         for i, register in enumerate(Register.registers):
             register.index = i
 
+    commands = {'copy': Copy,
+                'move': Move,
+                'add': Add,}
+
     #commands are [command, args...]
     def compile(self, proggy):
+        result = ''
         for line in proggy:
             l = line.split(' ')
-        pass
+            if l[0] not in commands:
+                print 'Unsupported command: %s' % l[0]
+            result += commands[l[0]](*l[1:])._fuckUp(self.pointer)
+
 
 if __name__ == '__main__':
     outputfile = sys.stdout
