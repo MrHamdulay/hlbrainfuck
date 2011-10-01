@@ -93,10 +93,10 @@ class Copy:
         self.fromRegister = fromRegister
         self.toRegister = toRegister
 
-    def _fuckUp(self):
+    def _fuckUp(self, curPointer):
         temp = TempRegister()
-        result = Move(
-        pass
+        return '%s%s' % (Move(self.fromRegister, [temp, self.toRegister])._fuckUp(curPointer),
+                           Move(temp, [self.fromRegister])._fuckUp(curPointer))
 
 class Add:
     def __init__(self, x, y):
