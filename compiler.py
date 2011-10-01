@@ -3,13 +3,52 @@ import sys
 
 class Register:
     index = 0
-    mappedOnto = None
     def __init__(self, index):
         self.index = index
 
+#maps user defined registers to actual brainfuck registers
+#user defined registers can have index [0...800ish]
+class UserRegister(Register):
+    mappedOnto = None
+
     #set the index value of the internal register this register is mapped onto
     def _map(self, index):
-        self.mappedOnto = index
+        self.mappedOnto = index1000ish
+
+#temporary register used internally for calculations
+class TempRegister(Register):
+    pass
+
+class Value:
+    value = None
+    def __init__(self, value):
+        self.value = value
+
+    #returns brainfuck string that creates this value
+    def _fuckUp(self):
+        pass
+
+class Command:
+    pass
+
+#move from index to another index
+class Move:
+    offset = None
+    left = False
+    def __init__(self, left, offset):
+        self.offset = offset
+        self.left = left
+
+    def _fuckUp(self):
+        bestBase = 1
+        best = self.offset
+        for i in range(2, 20):
+            length = self.offset / i + 2 + i + self.offset % i
+            if length < best:
+                best = length
+                bestBase = i
+        d = '<' if self.left else '>'
+        return '%s[%s]%s' % (d * (self.offset/bestBase), d * bestBase, d*(self.offset%i))
 
 class Compiler:
     proggy = None
