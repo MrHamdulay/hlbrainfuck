@@ -71,7 +71,8 @@ class BrainfuckInterpreter:
 
 
     def run(self, proggy):
-        self.proggy = proggy
+        commands = list(self.commands.iterkeys())
+        self.proggy = ''.join([x for x in proggy if x in commands])
         while self.instructionPos < len(proggy):
             if proggy[self.instructionPos] in self.commands:
                 self.commands[proggy[self.instructionPos]](self)
@@ -88,7 +89,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     proggy = ''
-    commands = list(BrainfuckInterpreter.commands.iterkeys())
     for line in inp:
-        proggy += ''.join([x for x in line if x in commands])
+        proggy += line
     interpreter.run(proggy)
