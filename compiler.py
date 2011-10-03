@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 import sys
+from collections import defaultdict
 
 #not always the best but good enough
 def findBestBase(rep):
@@ -168,9 +169,22 @@ class Compiler:
     def compile(self):
         result = ''
         commands = []
+        registers = defaultdict(Register)
+
         for line in self.proggy.split('\n'):
             l = line.split(' ')
-            if l[0] not in self.commands:
+            command, args = l[0], l[1:]
+            for i in xrange(len(args)):
+                try:
+                    args[i] = int(args[i])
+                except ValueError:
+                    try:
+                        if args[i][0] == 'r':
+                            args[i] = registers[int(args[i][1:])]
+                    except ValueError:
+                        pass
+
+            if command not in self.commands:
                 print 'Unsupported command: \'%s\'' % l[0]
             else:
                 commands.append(self.commands[l[0]](*l[1:]))
