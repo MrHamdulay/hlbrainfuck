@@ -88,6 +88,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     proggy = ''
+    commands = list(BrainfuckInterpreter.commands.iterkeys())
     for line in inp:
-        proggy += line
+        proggy += ''.join([x for x in line if x in commands])
     interpreter.run(proggy)
