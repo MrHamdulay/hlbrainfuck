@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 import sys
 
+class UnmatchedBracketException(Exception):
+    pass
+
 class BrainfuckInterpreter:
     registers = None
     loopStack = None
@@ -28,7 +31,18 @@ class BrainfuckInterpreter:
         self.registers[self.pointer] -= 1
 
     def beginLoop(self):
-        self.loopStack.append(self.instructionPos)
+        if self.registers[self.pointer] == 0:
+            stack = [self.instructionPos]
+            while stack:
+                self.instructionPos += 1
+                if self.instructionPos >= len(self.proggy):
+                    raise UnmatchedBracketException
+                if self.proggy[self.instructionPos] == '[':
+                    stack.append(self.instructionPos)
+                elif self.proggy[self.instructionPos] == ']':
+                    stack.pop()
+        else:
+            self.loopStack.append(self.instructionPos)
 
     def endLoop(self):
         if self.registers[self.pointer] != 0:
@@ -57,8 +71,9 @@ class BrainfuckInterpreter:
 
 
     def run(self, proggy):
+        self.proggy = proggy
         while self.instructionPos < len(proggy):
-            if proggy[self.instructionPos] in self.commands
+            if proggy[self.instructionPos] in self.commands:
                 self.commands[proggy[self.instructionPos]](self)
             self.instructionPos += 1
 
