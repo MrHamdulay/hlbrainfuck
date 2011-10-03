@@ -26,13 +26,15 @@ class Register:
     def __init__(self):
         #yes, singletons are bad
         #XXX: get rid of this list and put it into thte compiler object
+        if hasattr(Register, 'disabled'):
+            raise RuntimeException('Cannot create registers in fuck up phase')
         if not hasattr(Register, 'registers'):
             Register.registers = []
         Register.registers.append(self)
 
     def _finalIndex(self):
         if index is None:
-            raise 'Indexes have not been resolved'
+            raise RuntimeException('Indexes have not been resolved')
         return index
 
 #maps user defined registers to actual brainfuck registers
@@ -41,6 +43,7 @@ class UserRegister(Register):
     pass
 
 #temporary register used internally for calculations
+#TODO: reassign tempregisters to other commands when they're no longer used
 class TempRegister(Register):
     pass
 
@@ -74,15 +77,15 @@ class Value:
 
 #move from index to another index
 class MovePointer:
-    offset = None
-    def __init__(self, offset):
-        self.offset = offset
+    dest = None
+    def __init__(self, dest):
+        self.dest = dest
 
     def _fuckUp(self, curPointer):
-        delta = abs(int(curPointer) - self.offset)
-        d = '<' if (int(curPointer) - self.offset) < 0 else '>'
+        delta = abs(int(curPointer) - self.dest)
+        d = '<' if (int(curPointer) - self.dest) < 0 else '>'
         #return optimiseRepeat(delta)
-        curPointer.move(self.offset)
+        curPointer.move(self.dest)
         return d * delta
 
 #[move to dest, increment, move back, decrement]
@@ -91,6 +94,7 @@ class Move:
     _command = 'move'
     _ars = 2
     fromRegister = None
+    fromVal = None
     toRegister = None
 
     def __init__(self, fromRegister, toRegisters):
@@ -100,15 +104,19 @@ class Move:
         self.fromRegister = fromRegister
         self.toRegisters = toRegisters
 
+        if isinstance(self.fromRegister, int):
+            self.fromVal = self.fromRegister
+            self.fromRegister = TempRegister()
+
     def _fuckUp(self, curPointer):
         #move to from register position
         result = ''
-        if isinstance(self.fromRegister, int):
-            val = self.fromRegister
-            self.fromRegister = TempRegister()
-            result += Value(self.fromRegister, val)._fuckUp(curPointer)
 
-        result += '%s[' % MovePointer(last)._fuckUp(curPointer)
+        if self.fromVal is not None:
+            result += Value(self.fromRegister, self.fromVal)._fuckUp(curPointer)
+
+        print self.fromRegister
+        result += '%s[' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         for register in self.toRegisters:
             #move to dest, incremement
             result += '%s+' % MovePointer(register._finalIndex()).fuckUp(curPointer)
@@ -127,11 +135,11 @@ class Copy:
         assert isinstance(fromRegister, Register) and isinstance(toRegister, Register)
         self.fromRegister = fromRegister
         self.toRegister = toRegister
+        self.temp = TempRegister()
 
     def _fuckUp(self, curPointer):
-        temp = TempRegister()
-        return '%s%s' % (Move(self.fromRegister, [temp, self.toRegister])._fuckUp(curPointer),
-                           Move(temp, [self.fromRegister])._fuckUp(curPointer))
+        return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
+                           Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
 
 class Add:
     def __init__(self, x, y):
@@ -157,23 +165,31 @@ class Compiler:
                 'add': Add,}
 
     #commands are [command, args...]
-    def compile(self, proggy):
+    def compile(self):
         result = ''
-        for line in proggy:
+        commands = []
+        for line in self.proggy.split('\n'):
             l = line.split(' ')
-            if l[0] not in commands:
-                print 'Unsupported command: %s' % l[0]
-            result += commands[l[0]](*l[1:])._fuckUp(self.pointer)
+            if l[0] not in self.commands:
+                print 'Unsupported command: \'%s\'' % l[0]
+            else:
+                commands.append(self.commands[l[0]](*l[1:]))
+
+        Register.disabled = True
+        result = ''.join([x._fuckUp(self.pointer) for x in commands])
+
+        return result
 
 
 if __name__ == '__main__':
     outputfile = sys.stdout
-    proggy = None
+    proggy = ''
 
     if len(sys.argv) > 1:
         inputfilename = sys.argv[1]
         with open(inputfilename, 'r') as f:
-            proggy = f.read()
+            for line in f:
+                proggy += line
         if len(sys.argv) > 2:
             outputfile = open(sys.argv[2], 'w')
     else:
