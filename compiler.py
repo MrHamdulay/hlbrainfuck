@@ -240,9 +240,12 @@ class Compiler:
         registers = defaultdict(Register)
 
         for line in self.proggy.split('\n'):
-            l = line.split(' ')
-            command, args = l[0], l[1:]
+            if not line:
+                continue
+            command, args = line.split(' ', 1)
+            args = args.split(',')
             for i in xrange(len(args)):
+                args[i] = args[i].strip()
                 try:
                     number = int(args[i])
                     args[i] = TempRegister()
