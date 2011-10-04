@@ -38,6 +38,9 @@ class Register:
             raise Exception('Indexes have not been resolved')
         return self.index
 
+    def __repr__(self):
+        return '<Register index: %s >' % (self.index if self.index is not None else 'unresolved')
+
 #maps user defined registers to actual brainfuck registers
 #user defined registers can have index [0...800ish]
 class UserRegister(Register):
