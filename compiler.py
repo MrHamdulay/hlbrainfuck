@@ -99,6 +99,8 @@ class Move:
     toRegister = None
 
     def __init__(self, fromRegister, toRegisters):
+        if not isinstance(toRegisters, (tuple, list)):
+            toRegisters = (toRegisters,)
         for register in toRegisters:
             assert isinstance(register, Register)
 
@@ -176,7 +178,9 @@ class Compiler:
             command, args = l[0], l[1:]
             for i in xrange(len(args)):
                 try:
-                    args[i] = int(args[i])
+                    number = int(args[i])
+                    args[i] = TempRegister()
+                    commands.append(Value(args[i], number))
                 except ValueError:
                     try:
                         if args[i][0] == 'r':
@@ -184,10 +188,12 @@ class Compiler:
                     except ValueError:
                         pass
 
+            print 'Args', (command, args)
+
             if command not in self.commands:
                 print 'Unsupported command: \'%s\'' % l[0]
             else:
-                commands.append(self.commands[l[0]](*l[1:]))
+                commands.append(self.commands[command](*args))
 
         Register.disabled = True
         result = ''.join([x._fuckUp(self.pointer) for x in commands])
