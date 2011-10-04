@@ -118,11 +118,10 @@ class Move:
         if self.fromVal is not None:
             result += Value(self.fromRegister, self.fromVal)._fuckUp(curPointer)
 
-        print self.fromRegister
         result += '%s[' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         for register in self.toRegisters:
             #move to dest, incremement
-            result += '%s+' % MovePointer(register._finalIndex()).fuckUp(curPointer)
+            result += '%s+' % MovePointer(register._finalIndex())._fuckUp(curPointer)
 
         #move from last to beginning
         result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
@@ -188,12 +187,12 @@ class Compiler:
                     except ValueError:
                         pass
 
-            print 'Args', (command, args)
-
             if command not in self.commands:
                 print 'Unsupported command: \'%s\'' % l[0]
             else:
                 commands.append(self.commands[command](*args))
+
+        self.resolveRegisters()
 
         Register.disabled = True
         result = ''.join([x._fuckUp(self.pointer) for x in commands])
@@ -217,6 +216,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     compiler = Compiler(proggy)
-    compiler.compile()
-    outputfile.write(compiler.brainfuck())
+    brainfuck = compiler.compile()
+    outputfile.write(brainfuck)
+    outputfile.write('\n')
     outputfile.close()
