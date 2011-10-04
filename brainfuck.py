@@ -54,7 +54,7 @@ class BrainfuckInterpreter:
         self.registers[self.pointer] = sys.stdin.read()[0]
 
     def putChar(self):
-        print self.registers[self.pointer]
+        sys.stdout.write(chr(self.registers[self.pointer]))
 
     def printRegisters(self):
         print self.registers
