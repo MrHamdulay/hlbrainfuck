@@ -28,14 +28,14 @@ class Register:
         #yes, singletons are bad
         #XXX: get rid of this list and put it into thte compiler object
         if hasattr(Register, 'disabled'):
-            raise RuntimeException('Cannot create registers in fuck up phase')
+            raise Exception('Cannot create registers in fuck up phase')
         if not hasattr(Register, 'registers'):
             Register.registers = []
         Register.registers.append(self)
 
     def _finalIndex(self):
         if self.index is None:
-            raise RuntimeException('Indexes have not been resolved')
+            raise Exception('Indexes have not been resolved')
         return self.index
 
 #maps user defined registers to actual brainfuck registers
