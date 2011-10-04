@@ -205,6 +205,12 @@ class Copy:
         self.toRegister.modified = True
         self.temp.modified = True
 
+class Printr:
+    def __init__(self):
+        pass
+    def _fuckUp(self, *args):
+        return '?'
+
 class Compiler:
     proggy = None
     pointer = None
@@ -224,7 +230,8 @@ class Compiler:
                 'move': Move,
                 'add': Add,
                 'subtract': Subtract,
-                'multiply': Multiply}
+                'multiply': Multiply,
+                'printr': Printr}
 
     #commands are [command, args...]
     def compile(self):
@@ -280,5 +287,5 @@ if __name__ == '__main__':
     compiler = Compiler(proggy)
     brainfuck = compiler.compile()
     outputfile.write(brainfuck)
-    outputfile.write('?\n')
+    outputfile.write('\n')
     outputfile.close()
