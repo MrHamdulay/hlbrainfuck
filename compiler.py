@@ -132,7 +132,7 @@ class Move:
             result += '%s+' % MovePointer(register._finalIndex())._fuckUp(curPointer)
 
         #move from last to beginning
-        result += '%s]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
+        result += '%s-]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         return result
 
 class Copy:
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         if len(sys.argv) > 2:
             outputfile = open(sys.argv[2], 'w')
     else:
-        print 'python ./compiler.py [filename]'
+        print 'python ./compiler.py [filename] [output file name]'
         sys.exit(1)
 
     compiler = Compiler(proggy)
