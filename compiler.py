@@ -102,6 +102,32 @@ class Add:
                                 MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer))
         return result
 
+class Multiply:
+    _command = 'multiply'
+
+    destRegister = None
+    fromRegister = None
+    temp = None
+    move = None
+    add = None
+
+    def __init__(self, destRegister, fromRegister):
+        assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
+        self.destRegister = destRegister
+        self.fromRegister = fromRegister
+        self.temp = TempRegister()
+        self.move = Move(destRegister, self.temp)
+        self.add = Add(self.destRegister, self.fromRegister)
+
+    def _fuckUp(self, curPointer):
+        result = self.move._fuckUp(curPointer)
+        result += MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
+        result += '[%s%s%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
+                                 self.add._fuckUp(curPointer),
+                                 MovePointer(self.temp._finalIndex())._fuckUp(curPointer))
+        return result
+
+
 class Subtract:
     _command = 'subtract'
 
@@ -168,7 +194,6 @@ class Copy:
     left = False
 
     def __init__(self, fromRegister, toRegister):
-        print fromRegister, toRegister
         assert isinstance(fromRegister, Register) and isinstance(toRegister, Register)
         self.fromRegister = fromRegister
         self.toRegister = toRegister
@@ -176,7 +201,7 @@ class Copy:
 
     def _fuckUp(self, curPointer):
         return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
-                           Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
+                         Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
         self.toRegister.modified = True
         self.temp.modified = True
 
@@ -198,7 +223,8 @@ class Compiler:
     commands = {'copy': Copy,
                 'move': Move,
                 'add': Add,
-                'subtract': Subtract}
+                'subtract': Subtract,
+                'multiply': Multiply}
 
     #commands are [command, args...]
     def compile(self):
