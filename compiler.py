@@ -205,6 +205,47 @@ class Copy:
         self.toRegister.modified = True
         self.temp.modified = True
 
+#store a pointer to a string into a register
+class String:
+    _command = 'string'
+
+    string = None
+    destRegister = None
+    temps = []
+    name = None
+
+    def __init__(self, name, string):
+        self.string = string[1:-1] #get rid of 's
+        self.name = name
+        self.temps = [TempRegister() for x in xrange(len(self.string)+1)] #extra register makes a null byte at the end
+        String.strings[self.name] = None
+
+    def _fuckUp(self, curPointer):
+        String.strings[self.name] = (self.temps[0]._finalIndex(), len(self.string))
+        result = ''
+        for i in xrange(len(self.string)):
+            result += MovePointer(self.temps[i]._finalIndex())._fuckUp(curPointer)
+            result += Value(self.temps[i], ord(self.string[i]))._fuckUp(curPointer)
+        return result
+
+String.strings = {}
+
+class Print:
+    _command = 'print'
+    name = None
+
+    def __init__(self, name):
+        self.name = name
+        if name not in String.strings:
+            raise Exception('String %s does not exist' % self.name)
+
+    def _fuckUp(self, curPointer):
+        #move to index of string
+        result = MovePointer(String.strings[self.name][0])._fuckUp(curPointer)
+        result += '[,>]'
+        curPointer.move(int(curPointer)+String.strings[self.name][1])
+        return result
+
 class Printr:
     def __init__(self):
         pass
@@ -231,7 +272,9 @@ class Compiler:
                 'add': Add,
                 'subtract': Subtract,
                 'multiply': Multiply,
-                'printr': Printr}
+                'printr': Printr,
+                'string': String,
+                'print': Print}
 
     #commands are [command, args...]
     def compile(self):
@@ -258,7 +301,7 @@ class Compiler:
                         pass
 
             if command not in self.commands:
-                print 'Unsupported command: \'%s\'' % l[0]
+                print 'Unsupported command: \'%s\'' % command
             else:
                 commands.append(self.commands[command](*args))
 
@@ -266,7 +309,6 @@ class Compiler:
 
         Register.disabled = True
         for command in commands:
-            print 'Command %s, pointer pos: %d' % (command, self.pointer.pos)
             result += command._fuckUp(self.pointer)
 
         return result
