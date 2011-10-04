@@ -34,9 +34,9 @@ class Register:
         Register.registers.append(self)
 
     def _finalIndex(self):
-        if index is None:
+        if self.index is None:
             raise RuntimeException('Indexes have not been resolved')
-        return index
+        return self.index
 
 #maps user defined registers to actual brainfuck registers
 #user defined registers can have index [0...800ish]
