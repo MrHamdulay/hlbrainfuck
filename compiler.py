@@ -23,6 +23,7 @@ def optimiseRepeat(rep, command):
 
 class Register:
     index = None
+    modified = False
 
     def __init__(self):
         #yes, singletons are bad
@@ -32,6 +33,7 @@ class Register:
         if not hasattr(Register, 'registers'):
             Register.registers = []
         Register.registers.append(self)
+        self.modified = False
 
     def _finalIndex(self):
         if self.index is None:
@@ -79,6 +81,7 @@ class Value:
         #return optimiseRepeat(self.value, '+')
         result = ''
         if self.register is not None:
+            self.register.modified = True
             result += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
         result += self.value * '+'
         return result
@@ -125,7 +128,9 @@ class Move:
         #clear all destination registers
         for register in self.toRegisters:
             result += MovePointer(register._finalIndex())._fuckUp(curPointer)
-            result += '[-]'
+            if register.modified:
+                result += '[-]'
+            register.modified = True
 
         if self.fromVal is not None:
             result += Value(self.fromRegister, self.fromVal)._fuckUp(curPointer)
@@ -152,6 +157,8 @@ class Copy:
         self.temp = TempRegister()
 
     def _fuckUp(self, curPointer):
+        self.toRegister.modified = True
+        self.temp.modified = True
         return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
                            Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
 
