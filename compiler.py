@@ -100,11 +100,31 @@ class MovePointer:
         curPointer.move(self.dest)
         return d * delta
 
+class Add:
+    _command = 'add'
+    destRegister = None
+    fromRegister = None
+    temp = None
+    copy = None
+
+    def __init__(self, destRegister, fromRegister):
+        assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
+        self.destRegister = destRegister
+        self.fromRegister = fromRegister
+        self.temp = TempRegister()
+        self.copy = Copy(self.fromRegister, self.temp)
+
+    def _fuckUp(self, curPointer):
+        result = self.copy._fuckUp(curPointer)
+        moveFrom = MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
+        moveTo = MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer)
+        result += '[%s+%s-]' % (moveFrom, moveTo)
+        return result
+
 #[move to dest, increment, move back, decrement]
 #from from one register to many registers
 class Move:
     _command = 'move'
-    _ars = 2
     fromRegister = None
     fromVal = None
     toRegister = None
@@ -157,14 +177,10 @@ class Copy:
         self.temp = TempRegister()
 
     def _fuckUp(self, curPointer):
-        self.toRegister.modified = True
-        self.temp.modified = True
         return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
                            Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
-
-class Add:
-    def __init__(self, x, y):
-        pass
+        self.toRegister.modified = True
+        self.temp.modified = True
 
 class Compiler:
     proggy = None
@@ -239,5 +255,5 @@ if __name__ == '__main__':
     compiler = Compiler(proggy)
     brainfuck = compiler.compile()
     outputfile.write(brainfuck)
-    outputfile.write('\n')
+    outputfile.write('?\n')
     outputfile.close()
