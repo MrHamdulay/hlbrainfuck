@@ -54,20 +54,31 @@ class Pointer:
 class Value:
     value = None
     register = None
+    tempRegister = None
+
     def __init__(self, register, value):
         assert isinstance(register, Register)
         self.register = register
         self.value = value
+        self.tempRegister = TempRegister()
 
     #returns brainfuck string that creates this value
     def _fuckUp(self, curPointer):
-        #return optimiseRepeat(self.value, '+')
         result = ''
         if self.register is not None:
             self.register.modified = True
             result += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
         result += self.value * '+'
-        return result
+
+
+        result2 = ''
+        result2 += MovePointer(self.tempRegister._finalIndex())._fuckUp(curPointer)
+        result2 += '+' * (self.value / 6)
+        result2 += '['+MovePointer(self.register._finalIndex())._fuckUp(curPointer)
+        result2 += '+'*6 + MovePointer(self.tempRegister._finalIndex())._fuckUp(curPointer) + '-]'
+        result2 += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
+        result2 += '+' * (self.value % 6)
+        return result if len(result) < len(result2) else result2
 
 
 #move from index to another index
@@ -223,15 +234,16 @@ class String:
         self.name = name
         self.temps = [TempRegister() for x in xrange(len(self.string)+1)] #extra register makes a null byte at the end
         String.strings[self.name] = None
-        for i in xrange(len(self.string)):
-            self.values.append(Value(self.temps[i], ord(self.string[i])))
 
     def _fuckUp(self, curPointer):
         String.strings[self.name] = (self.temps[0]._finalIndex(), len(self.string))
-        result = ''
+        #this is a hax to use less operations and not make the code a massive blob of nothing
+        result = MovePointer(self.temps[0]._finalIndex())._fuckUp(curPointer)
         for i in xrange(len(self.string)):
-            result += MovePointer(self.temps[i]._finalIndex())._fuckUp(curPointer)
-            result += self.values[i]._fuckUp(curPointer)
+            result += '>'+'+' * (ord(self.string[i])/6)
+            result += '[<++++++>-]<%s>' % ('+'*(ord(self.string[i])%6))
+        result += '[-]'
+        curPointer.move(int(curPointer)+len(self.string))
         return result
 
 String.strings = {}
