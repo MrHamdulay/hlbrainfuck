@@ -51,10 +51,10 @@ class BrainfuckInterpreter:
             self.loopStack.pop()
 
     def getChar(self):
-        self.registers[self.pointer] = ord(sys.stdin.read()[0])
+        self.registers[self.pointer] = sys.stdin.read()[0]
 
     def putChar(self):
-        print 'done',self.registers[self.pointer]
+        print self.registers[self.pointer]
 
     def printRegisters(self):
         print self.registers
