@@ -2,25 +2,6 @@
 import sys
 from collections import defaultdict
 
-#not always the best but good enough
-def findBestBase(rep):
-    bestBase = 1
-    best = rep
-    for i in range(2, 20):
-        length = rep / i + rep % i
-        if length < best:
-            best = length
-            bestBase = i
-    return bestBase
-
-#bleh this doesn't work, need to use temporary registers and still need to figure that out
-def optimiseRepeat(rep, command):
-    bestBase = findBestBase(rep)
-    d = command
-    if bestBase == 1:
-        return d * rep
-    return '%s[%s]%s' % (d * (rep/bestBase), d * bestBase, d*(rep%i))
-
 class Register:
     index = None
     modified = False
@@ -257,4 +238,3 @@ if __name__ == '__main__':
     outputfile.write(brainfuck)
     outputfile.write('?\n')
     outputfile.close()
-
