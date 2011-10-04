@@ -49,6 +49,7 @@ class Pointer:
     def __repr__(self):
         return '<Pointer pos: %d>' % self.pos
 
+#gives registers a value
 class Value:
     value = None
     register = None
@@ -91,15 +92,30 @@ class Add:
     def __init__(self, destRegister, fromRegister):
         assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
         self.destRegister = destRegister
-        self.fromRegister = fromRegister
-        self.temp = TempRegister()
-        self.copy = Copy(self.fromRegister, self.temp)
+        self.fromRegister = TempRegister()
+        self.copy = Copy(fromRegister, self.fromRegister)
 
     def _fuckUp(self, curPointer):
         result = self.copy._fuckUp(curPointer)
-        result += MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
+        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
-                                MovePointer(self.temp._finalIndex())._fuckUp(curPointer))
+                                MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer))
+        return result
+
+class Subtract:
+    _command = 'subtract'
+
+    def __init__(self, destRegister, fromRegister):
+        assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
+        self.destRegister = destRegister
+        self.fromRegister = TempRegister()
+        self.copy = Copy(fromRegister, self.fromRegister)
+
+    def _fuckUp(self, curPointer):
+        result = self.copy._fuckUp(curPointer)
+        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
+        result += '[%s-%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
+                                MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer))
         return result
 
 #[move to dest, increment, move back, decrement]
@@ -152,6 +168,7 @@ class Copy:
     left = False
 
     def __init__(self, fromRegister, toRegister):
+        print fromRegister, toRegister
         assert isinstance(fromRegister, Register) and isinstance(toRegister, Register)
         self.fromRegister = fromRegister
         self.toRegister = toRegister
@@ -180,7 +197,8 @@ class Compiler:
 
     commands = {'copy': Copy,
                 'move': Move,
-                'add': Add,}
+                'add': Add,
+                'subtract': Subtract}
 
     #commands are [command, args...]
     def compile(self):
