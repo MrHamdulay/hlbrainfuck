@@ -50,6 +50,7 @@ class Pointer:
         return '<Pointer pos: %d>' % self.pos
 
 #gives registers a value
+#TODO: optimise this to make it use less + operators
 class Value:
     value = None
     register = None
@@ -149,8 +150,9 @@ class Subtract:
 class Move:
     _command = 'move'
     fromRegister = None
-    fromVal = None
     toRegister = None
+
+    value = None
 
     def __init__(self, fromRegister, toRegisters):
         if not isinstance(toRegisters, (tuple, list)):
@@ -162,8 +164,9 @@ class Move:
         self.toRegisters = toRegisters
 
         if isinstance(self.fromRegister, int):
-            self.fromVal = self.fromRegister
+            fromVal = self.fromRegister
             self.fromRegister = TempRegister()
+            self.value = Value(self.fromRegister, self.fromVal)
 
     def _fuckUp(self, curPointer):
         result = ''
@@ -175,8 +178,8 @@ class Move:
                 result += '[-]'
             register.modified = True
 
-        if self.fromVal is not None:
-            result += Value(self.fromRegister, self.fromVal)._fuckUp(curPointer)
+        if self.value is not None:
+            result += self.value._fuckUp(curPointer)
 
         result += '%s[' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         for register in self.toRegisters:
@@ -213,19 +216,22 @@ class String:
     destRegister = None
     temps = []
     name = None
+    values = []
 
     def __init__(self, name, string):
         self.string = string[1:-1] #get rid of 's
         self.name = name
         self.temps = [TempRegister() for x in xrange(len(self.string)+1)] #extra register makes a null byte at the end
         String.strings[self.name] = None
+        for i in xrange(len(self.string)):
+            self.values.append(Value(self.temps[i], ord(self.string[i])))
 
     def _fuckUp(self, curPointer):
         String.strings[self.name] = (self.temps[0]._finalIndex(), len(self.string))
         result = ''
         for i in xrange(len(self.string)):
             result += MovePointer(self.temps[i]._finalIndex())._fuckUp(curPointer)
-            result += Value(self.temps[i], ord(self.string[i]))._fuckUp(curPointer)
+            result += self.values[i]._fuckUp(curPointer)
         return result
 
 String.strings = {}
@@ -247,7 +253,7 @@ class Print:
         return result
 
 class Printr:
-    def __init__(self):
+    def __init__(self, *args):
         pass
     def _fuckUp(self, *args):
         return '?'
@@ -285,7 +291,10 @@ class Compiler:
         for line in self.proggy.split('\n'):
             if not line:
                 continue
-            command, args = line.split(' ', 1)
+            try:
+                command, args = line.split(' ', 1)
+            except ValueError:
+                command, args = line, ' '
             args = args.split(',')
             for i in xrange(len(args)):
                 args[i] = args[i].strip()
@@ -297,15 +306,17 @@ class Compiler:
                     try:
                         if args[i][0] == 'r':
                             args[i] = registers[int(args[i][1:])]
-                    except ValueError:
+                    except (ValueError, IndexError):
                         pass
 
             if command not in self.commands:
                 print 'Unsupported command: \'%s\'' % command
             else:
+                print 'Command', command, args
                 commands.append(self.commands[command](*args))
 
         self.resolveRegisters()
+        print Register.registers
 
         Register.disabled = True
         for command in commands:
