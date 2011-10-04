@@ -116,9 +116,9 @@ class Add:
 
     def _fuckUp(self, curPointer):
         result = self.copy._fuckUp(curPointer)
-        moveFrom = MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
-        moveTo = MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer)
-        result += '[%s+%s-]' % (moveFrom, moveTo)
+        result += MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
+        result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
+                                MovePointer(self.temp._finalIndex())._fuckUp(curPointer))
         return result
 
 #[move to dest, increment, move back, decrement]
@@ -257,3 +257,4 @@ if __name__ == '__main__':
     outputfile.write(brainfuck)
     outputfile.write('?\n')
     outputfile.close()
+
