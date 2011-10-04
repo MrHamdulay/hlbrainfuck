@@ -120,8 +120,12 @@ class Move:
             self.fromRegister = TempRegister()
 
     def _fuckUp(self, curPointer):
-        #move to from register position
         result = ''
+
+        #clear all destination registers
+        for register in self.toRegisters:
+            result += MovePointer(register._finalIndex())._fuckUp(curPointer)
+            result += '[-]'
 
         if self.fromVal is not None:
             result += Value(self.fromRegister, self.fromVal)._fuckUp(curPointer)
