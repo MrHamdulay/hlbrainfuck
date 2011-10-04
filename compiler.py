@@ -49,6 +49,8 @@ class UserRegister(Register):
 #temporary register used internally for calculations
 #TODO: reassign tempregisters to other commands when they're no longer used
 class TempRegister(Register):
+    def __repr__(self):
+        return '<TempRegister index: %s>' % (str(self.index) if self.index is not None else 'unresolved')
     pass
 
 class Pointer:
@@ -56,7 +58,7 @@ class Pointer:
         self.pos = 0
 
     def move(self, index):
-        self.pos += index
+        self.pos = index
 
     def __int__(self):
         return self.pos
@@ -90,7 +92,7 @@ class MovePointer:
 
     def _fuckUp(self, curPointer):
         delta = abs(int(curPointer) - self.dest)
-        d = '<' if (int(curPointer) - self.dest) < 0 else '>'
+        d = '<' if (int(curPointer) - self.dest) > 0 else '>'
         #return optimiseRepeat(delta)
         curPointer.move(self.dest)
         return d * delta
@@ -201,7 +203,9 @@ class Compiler:
         self.resolveRegisters()
 
         Register.disabled = True
-        result = ''.join([x._fuckUp(self.pointer) for x in commands])
+        for command in commands:
+            print 'Command %s, pointer pos: %d' % (command, self.pointer.pos)
+            result += command._fuckUp(self.pointer)
 
         return result
 
