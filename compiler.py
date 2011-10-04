@@ -61,6 +61,9 @@ class Pointer:
     def __int__(self):
         return self.pos
 
+    def __repr__(self):
+        return '<Pointer pos: %d>' % self.pos
+
 class Value:
     value = None
     register = None
