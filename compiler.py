@@ -102,15 +102,16 @@ class Add:
     temps = [None, None]
     copies = [None, None]
 
-    def __init__(self, arg1, arg2, destRegister):
+    def __init__(self,destRegister, *args):
         self.destRegister = destRegister
-        self.temps = TempRegister(), TempRegister()
-        self.copies = Copy(arg1, self.temps[0]), Copy(arg2, self.temps[1])
+        self.temps = [TempRegister() for x in xrange(len(args))]
+        self.copies = [Copy(args[i], self.temps[i]) for i in xrange(len(args))]
+        self.args = args
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
         result = ''
-        for i in xrange(2):
+        for i in xrange(len(self.args)):
             result += self.copies[i]._fuckUp(compiler)
             result += MovePointer(self.temps[i]._finalIndex())._fuckUp(compiler)
             result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
