@@ -63,7 +63,8 @@ class Value:
         self.tempRegister = TempRegister()
 
     #returns brainfuck string that creates this value
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         result = ''
         if self.register is not None:
             self.register.modified = True
@@ -87,7 +88,8 @@ class MovePointer:
     def __init__(self, dest):
         self.dest = dest
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         delta = abs(int(curPointer) - self.dest)
         d = '<' if (int(curPointer) - self.dest) > 0 else '>'
         #return optimiseRepeat(delta)
@@ -107,7 +109,8 @@ class Add:
         self.fromRegister = TempRegister()
         self.copy = Copy(fromRegister, self.fromRegister)
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         result = self.copy._fuckUp(curPointer)
         result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
@@ -131,7 +134,8 @@ class Multiply:
         self.move = Move(destRegister, self.temp)
         self.add = Add(self.destRegister, self.fromRegister)
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         result = self.move._fuckUp(curPointer)
         result += MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
         result += '[%s%s%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
@@ -149,7 +153,8 @@ class Subtract:
         self.fromRegister = TempRegister()
         self.copy = Copy(fromRegister, self.fromRegister)
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         result = self.copy._fuckUp(curPointer)
         result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
         result += '[%s-%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
@@ -179,7 +184,8 @@ class Move:
             self.fromRegister = TempRegister()
             self.value = Value(self.fromRegister, self.fromVal)
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         result = ''
 
         #clear all destination registers
@@ -213,7 +219,8 @@ class Copy:
         self.toRegister = toRegister
         self.temp = TempRegister()
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
                          Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
         self.toRegister.modified = True
@@ -235,13 +242,14 @@ class String:
         self.temps = [TempRegister() for x in xrange(len(self.string)+1)] #extra register makes a null byte at the end
         String.strings[self.name] = None
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         String.strings[self.name] = (self.temps[0]._finalIndex(), len(self.string))
         #this is a hax to use less operations and not make the code a massive blob of nothing
         result = MovePointer(self.temps[0]._finalIndex())._fuckUp(curPointer)
         for i in xrange(len(self.string)):
-            result += '>'+'+' * (ord(self.string[i])/6)
-            result += '[<++++++>-]<%s>' % ('+'*(ord(self.string[i])%6))
+            result += '>'+'+' * (ord(self.string[i])/10)
+            result += '[<++++++++++>-]<%s>' % ('+'*(ord(self.string[i])%10))
         result += '[-]'
         curPointer.move(int(curPointer)+len(self.string))
         return result
@@ -255,9 +263,12 @@ class Print:
     def __init__(self, name):
         self.name = name
         if name not in String.strings:
+            if isinstance(name, str) and name[0] == 'r':
+
             raise Exception('String %s does not exist' % self.name)
 
-    def _fuckUp(self, curPointer):
+    def _fuckUp(self, compiler):
+        curPointer = compiler.pointer
         #move to index of string
         result = MovePointer(String.strings[self.name][0])._fuckUp(curPointer)
         result += '[,>]'
@@ -324,11 +335,10 @@ class Compiler:
             if command not in self.commands:
                 print 'Unsupported command: \'%s\'' % command
             else:
-                print 'Command', command, args
+                #print 'Command', command, args
                 commands.append(self.commands[command](*args))
 
         self.resolveRegisters()
-        print Register.registers
 
         Register.disabled = True
         for command in commands:
