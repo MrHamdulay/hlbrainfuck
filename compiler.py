@@ -128,7 +128,7 @@ class Multiply:
     copy = None
     add = None
 
-    def __init__(self, arg1, arg2, destRegister):
+    def __init__(self, destRegister, arg1, arg2):
         self.arg1 = arg1
         self.arg2 = arg2
 
