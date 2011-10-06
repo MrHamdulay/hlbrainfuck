@@ -68,16 +68,16 @@ class Value:
         result = ''
         if self.register is not None:
             self.register.modified = True
-            result += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
+            result += MovePointer(self.register._finalIndex())._fuckUp(compiler)
         result += self.value * '+'
 
 
         result2 = ''
-        result2 += MovePointer(self.tempRegister._finalIndex())._fuckUp(curPointer)
+        result2 += MovePointer(self.tempRegister._finalIndex())._fuckUp(compiler)
         result2 += '+' * (self.value / 6)
-        result2 += '['+MovePointer(self.register._finalIndex())._fuckUp(curPointer)
-        result2 += '+'*6 + MovePointer(self.tempRegister._finalIndex())._fuckUp(curPointer) + '-]'
-        result2 += MovePointer(self.register._finalIndex())._fuckUp(curPointer)
+        result2 += '['+MovePointer(self.register._finalIndex())._fuckUp(compiler)
+        result2 += '+'*6 + MovePointer(self.tempRegister._finalIndex())._fuckUp(compiler) + '-]'
+        result2 += MovePointer(self.register._finalIndex())._fuckUp(compiler)
         result2 += '+' * (self.value % 6)
         return result if len(result) < len(result2) else result2
 
@@ -111,10 +111,10 @@ class Add:
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        result = self.copy._fuckUp(curPointer)
-        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
-        result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
-                                MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer))
+        result = self.copy._fuckUp(compiler)
+        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler)
+        result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
+                                MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler))
         return result
 
 class Multiply:
@@ -136,11 +136,11 @@ class Multiply:
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        result = self.move._fuckUp(curPointer)
-        result += MovePointer(self.temp._finalIndex())._fuckUp(curPointer)
-        result += '[%s%s%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
-                                 self.add._fuckUp(curPointer),
-                                 MovePointer(self.temp._finalIndex())._fuckUp(curPointer))
+        result = self.move._fuckUp(compiler)
+        result += MovePointer(self.temp._finalIndex())._fuckUp(compiler)
+        result += '[%s%s%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
+                                 self.add._fuckUp(compiler),
+                                 MovePointer(self.temp._finalIndex())._fuckUp(compiler))
         return result
 
 
@@ -155,10 +155,10 @@ class Subtract:
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        result = self.copy._fuckUp(curPointer)
-        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
-        result += '[%s-%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(curPointer),
-                                MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer))
+        result = self.copy._fuckUp(compiler)
+        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler)
+        result += '[%s-%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
+                                MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler))
         return result
 
 #[move to dest, increment, move back, decrement]
@@ -190,21 +190,21 @@ class Move:
 
         #clear all destination registers
         for register in self.toRegisters:
-            result += MovePointer(register._finalIndex())._fuckUp(curPointer)
+            result += MovePointer(register._finalIndex())._fuckUp(compiler)
             if register.modified:
                 result += '[-]'
             register.modified = True
 
         if self.value is not None:
-            result += self.value._fuckUp(curPointer)
+            result += self.value._fuckUp(compiler)
 
-        result += '%s[' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
+        result += '%s[' % MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler)
         for register in self.toRegisters:
             #move to dest, incremement
-            result += '%s+' % MovePointer(register._finalIndex())._fuckUp(curPointer)
+            result += '%s+' % MovePointer(register._finalIndex())._fuckUp(compiler)
 
         #move from last to beginning
-        result += '%s-]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(curPointer)
+        result += '%s-]' % MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler)
         return result
 
 class Copy:
@@ -221,8 +221,8 @@ class Copy:
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(curPointer),
-                         Move(self.temp, [self.fromRegister])._fuckUp(curPointer))
+        return '%s%s' % (Move(self.fromRegister, [self.temp, self.toRegister])._fuckUp(compiler),
+                         Move(self.temp, [self.fromRegister])._fuckUp(compiler))
         self.toRegister.modified = True
         self.temp.modified = True
 
@@ -246,7 +246,7 @@ class String:
         curPointer = compiler.pointer
         String.strings[self.name] = (self.temps[0]._finalIndex(), len(self.string))
         #this is a hax to use less operations and not make the code a massive blob of nothing
-        result = MovePointer(self.temps[0]._finalIndex())._fuckUp(curPointer)
+        result = MovePointer(self.temps[0]._finalIndex())._fuckUp(compiler)
         for i in xrange(len(self.string)):
             result += '>'+'+' * (ord(self.string[i])/10)
             result += '[<++++++++++>-]<%s>' % ('+'*(ord(self.string[i])%10))
@@ -264,13 +264,14 @@ class Print:
         self.name = name
         if name not in String.strings:
             if isinstance(name, str) and name[0] == 'r':
+                pass
 
             raise Exception('String %s does not exist' % self.name)
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
         #move to index of string
-        result = MovePointer(String.strings[self.name][0])._fuckUp(curPointer)
+        result = MovePointer(String.strings[self.name][0])._fuckUp(compiler)
         result += '[,>]'
         curPointer.move(int(curPointer)+String.strings[self.name][1])
         return result
@@ -342,7 +343,7 @@ class Compiler:
 
         Register.disabled = True
         for command in commands:
-            result += command._fuckUp(self.pointer)
+            result += command._fuckUp(self)
 
         return result
 
