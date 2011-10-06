@@ -121,28 +121,29 @@ class Multiply:
     _command = 'multiply'
 
     destRegister = None
-    fromRegister = None
+    arg1 = None
+    arg2 = None
     temp = None
-    move = None
+    copy = None
     add = None
 
-    def __init__(self, destRegister, fromRegister):
-        assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
+    def __init__(self, arg1, arg2, destRegister):
+        self.arg1 = arg1
+        self.arg2 = arg2
+
         self.destRegister = destRegister
-        self.fromRegister = fromRegister
         self.temp = TempRegister()
-        self.move = Move(destRegister, self.temp)
-        self.add = Add(self.destRegister, self.fromRegister)
+        self.copy = Copy(arg1, self.temp)
+        self.add = Add(self.destRegister, arg2)
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        result = self.move._fuckUp(compiler)
+        result = self.copy._fuckUp(compiler)
         result += MovePointer(self.temp._finalIndex())._fuckUp(compiler)
-        result += '[%s%s%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
+        result += '[%s%s%s-]' % (MovePointer(self.arg2._finalIndex())._fuckUp(compiler),
                                  self.add._fuckUp(compiler),
                                  MovePointer(self.temp._finalIndex())._fuckUp(compiler))
         return result
-
 
 class Subtract:
     _command = 'subtract'
@@ -256,6 +257,8 @@ class String:
 
 String.strings = {}
 
+#TODO: print integer values of registers
+
 class Print:
     _command = 'print'
     name = None
@@ -263,9 +266,6 @@ class Print:
     def __init__(self, name):
         self.name = name
         if name not in String.strings:
-            if isinstance(name, str) and name[0] == 'r':
-                pass
-
             raise Exception('String %s does not exist' % self.name)
 
     def _fuckUp(self, compiler):
