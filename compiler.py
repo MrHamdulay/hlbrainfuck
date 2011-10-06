@@ -99,22 +99,22 @@ class MovePointer:
 class Add:
     _command = 'add'
     destRegister = None
-    fromRegister = None
-    temp = None
-    copy = None
+    temps = [None, None]
+    copies = [None, None]
 
-    def __init__(self, destRegister, fromRegister):
-        assert isinstance(destRegister, Register) and isinstance(fromRegister, Register)
+    def __init__(self, arg1, arg2, destRegister):
         self.destRegister = destRegister
-        self.fromRegister = TempRegister()
-        self.copy = Copy(fromRegister, self.fromRegister)
+        self.temps = TempRegister(), TempRegister()
+        self.copies = Copy(arg1, self.temps[0]), Copy(arg2, self.temps[1])
 
     def _fuckUp(self, compiler):
         curPointer = compiler.pointer
-        result = self.copy._fuckUp(compiler)
-        result += MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler)
-        result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
-                                MovePointer(self.fromRegister._finalIndex())._fuckUp(compiler))
+        result = ''
+        for i in xrange(2):
+            result += self.copies[i]._fuckUp(compiler)
+            result += MovePointer(self.temps[i]._finalIndex())._fuckUp(compiler)
+            result += '[%s+%s-]' % (MovePointer(self.destRegister._finalIndex())._fuckUp(compiler),
+                                   MovePointer(self.temps[i]._finalIndex())._fuckUp(compiler))
         return result
 
 class Multiply:
