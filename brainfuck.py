@@ -15,7 +15,7 @@ class BrainfuckInterpreter:
 
 
     def __init__(self):
-        self.registers = [0] * 50
+        self.registers = [0] * 100
         self.loopStack = []
 
     def shiftRight(self):
@@ -32,15 +32,15 @@ class BrainfuckInterpreter:
 
     def beginLoop(self):
         if self.registers[self.pointer] == 0:
-            stack = [self.instructionPos]
-            while stack:
+            depth = 1
+            while depth:
                 self.instructionPos += 1
-                if self.instructionPos >= len(self.proggy):
+                if self.instructionPos > len(self.proggy):
                     raise UnmatchedBracketException
                 if self.proggy[self.instructionPos] == '[':
-                    stack.append(self.instructionPos)
+                    depth += 1
                 elif self.proggy[self.instructionPos] == ']':
-                    stack.pop()
+                    depth -= 1
         else:
             self.loopStack.append(self.instructionPos)
 
@@ -72,10 +72,9 @@ class BrainfuckInterpreter:
 
     def run(self, proggy):
         commands = list(self.commands.iterkeys())
-        self.proggy = ''.join([x for x in proggy if x in commands])
+        self.proggy = proggy = ''.join([x for x in proggy if x in commands])
         while self.instructionPos < len(proggy):
-            if proggy[self.instructionPos] in self.commands:
-                self.commands[proggy[self.instructionPos]](self)
+            self.commands[proggy[self.instructionPos]](self)
             self.instructionPos += 1
 
 
