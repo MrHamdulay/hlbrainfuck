@@ -89,12 +89,30 @@ class MovePointer:
         self.dest = dest
 
     def _fuckUp(self, compiler):
+        if isinstance(self.dest, Register):
+            self.dest = self.dest._finalIndex()
         curPointer = compiler.pointer
         delta = abs(int(curPointer) - self.dest)
         d = '<' if (int(curPointer) - self.dest) > 0 else '>'
         #return optimiseRepeat(delta)
         curPointer.move(self.dest)
+
         return d * delta
+
+class LessThan:
+    _command = 'lessthan'
+
+    def __init__(self, arg1, arg2, destRegister):
+        assert isinstance(arg1, Register) and isinstance(arg2, Register) and isinstance(destRegister, Register)
+        self.temps = TempRegister(), TempRegister()
+        self.copies = Copy(arg1, self.temps[0]), Copy(arg2, self.temps[1])
+
+    def _fuckUp(self, compiler):
+        result = ''.join([x._fuckUp(compiler) for x in self.copies])
+        result += MovePointer(self.temps[0])._fuckUp(compiler)
+        result += '[%s-%s-]'
+        #TODO: finish
+        pass
 
 class Add:
     _command = 'add'
@@ -118,6 +136,22 @@ class Add:
                                    MovePointer(self.temps[i]._finalIndex())._fuckUp(compiler))
         return result
 
+class Divide:
+    _command = 'divide'
+
+    def __init__(self, destRegister, dividend, divisor):
+        self.destRegister = destRegister
+        self.temp = TempRegister()
+        self.copy = Copy(dividend, self.temp)
+
+    def _fuckUp(self, compiler):
+        result = self.copy._fuckUp(compiler)
+        result += '[%s%s%s-]' % (MovePointer(self.temp._finalIndex())._fuckUp(compiler),
+                                self.subtract._fuckUp(compiler),
+                                MovePointer(self.destRegister._finalIndex())._fuckUp(compiler))
+        return result
+
+
 class Multiply:
     _command = 'multiply'
 
@@ -138,7 +172,6 @@ class Multiply:
         self.add = Add(self.destRegister, arg2)
 
     def _fuckUp(self, compiler):
-        curPointer = compiler.pointer
         result = self.copy._fuckUp(compiler)
         result += MovePointer(self.temp._finalIndex())._fuckUp(compiler)
         result += '[%s%s%s-]' % (MovePointer(self.arg2._finalIndex())._fuckUp(compiler),
@@ -228,6 +261,13 @@ class Copy:
         self.toRegister.modified = True
         self.temp.modified = True
 
+class Brainfuck:
+    def __init__(self, bf):
+        self.bf = bf[1:-1]
+
+    def _fuckUp(self, compiler):
+        return self.bf
+
 #store a pointer to a string into a register
 class String:
     _command = 'string'
@@ -305,7 +345,9 @@ class Compiler:
                 'multiply': Multiply,
                 'printr': Printr,
                 'string': String,
-                'print': Print}
+                'print': Print,
+                'brainfuck': Brainfuck,
+                'bf': Brainfuck}
 
     #commands are [command, args...]
     def compile(self):
